@@ -1,0 +1,33 @@
+name: widows_orphans
+repository: https://github.com/logos-gs/widows-orphans
+
+packages:
+  - apps/*
+  - packages/*
+  - backend
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: dart analyze .
+    exec:
+      concurrency: 1
+    packageFilters:
+      dirExists: lib
+
+  test:
+    run: dart test
+    exec:
+      concurrency: 1
+    packageFilters:
+      dirExists: test
+
+  generate:
+    run: dart run build_runner build --delete-conflicting-outputs
+    exec:
+      concurrency: 1
+    packageFilters:
+      dependsOn: build_runner
