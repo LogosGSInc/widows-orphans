@@ -1,0 +1,15 @@
+# Widows & Orphans — Backend Container
+# Copyright (c) 2024 LOGOS Governance Systems, Inc. All rights reserved.
+
+FROM dart:stable AS build
+
+WORKDIR /app
+COPY backend/ ./
+RUN dart pub get
+RUN dart compile exe bin/server.dart -o bin/server
+
+FROM scratch
+COPY --from=build /runtime/ /
+COPY --from=build /app/bin/server /app/bin/server
+EXPOSE 8080
+CMD ["/app/bin/server"]
