@@ -7,9 +7,14 @@ import 'package:go_router/go_router.dart';
 import 'package:domain/domain.dart';
 import '../auth/auth_provider.dart';
 import '../auth/sign_in_screen.dart';
-import '../screens/requester_home_screen.dart';
-import '../screens/helper_home_screen.dart';
-import '../screens/dashboard_screen.dart';
+import '../screens/requester/my_needs_screen.dart';
+import '../screens/requester/new_request_screen.dart';
+import '../screens/requester/need_status_screen.dart';
+import '../screens/requester/need_fulfilled_screen.dart';
+import '../screens/helper/available_needs_screen.dart';
+import '../screens/helper/need_detail_screen.dart';
+import '../screens/dashboard/queue_screen.dart';
+import '../screens/dashboard/review_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -34,9 +39,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         return switch (user.role) {
           UserRole.requester => '/requests',
           UserRole.helper => '/available',
-          UserRole.orgAdmin => '/dashboard',
-          UserRole.moderator => '/dashboard',
-          UserRole.sponsorAdmin => '/dashboard',
+          UserRole.orgAdmin => '/dashboard/queue',
+          UserRole.moderator => '/dashboard/queue',
+          UserRole.sponsorAdmin => '/dashboard/queue',
         };
       }
 
@@ -47,17 +52,51 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/signin',
         builder: (context, state) => const SignInScreen(),
       ),
+
+      // — Requester routes —
       GoRoute(
         path: '/requests',
-        builder: (context, state) => const RequesterHomeScreen(),
+        builder: (context, state) => const MyNeedsScreen(),
       ),
+      GoRoute(
+        path: '/requests/new',
+        builder: (context, state) => const NewRequestScreen(),
+      ),
+      GoRoute(
+        path: '/requests/status/:id',
+        builder: (context, state) => NeedStatusScreen(
+          needId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/requests/fulfilled/:id',
+        builder: (context, state) => NeedFulfilledScreen(
+          needId: state.pathParameters['id']!,
+        ),
+      ),
+
+      // — Helper routes —
       GoRoute(
         path: '/available',
-        builder: (context, state) => const HelperHomeScreen(),
+        builder: (context, state) => const AvailableNeedsScreen(),
       ),
       GoRoute(
-        path: '/dashboard',
-        builder: (context, state) => const DashboardScreen(),
+        path: '/available/:id',
+        builder: (context, state) => NeedDetailScreen(
+          needId: state.pathParameters['id']!,
+        ),
+      ),
+
+      // — Dashboard / Moderator / Org Admin routes —
+      GoRoute(
+        path: '/dashboard/queue',
+        builder: (context, state) => const QueueScreen(),
+      ),
+      GoRoute(
+        path: '/dashboard/review/:id',
+        builder: (context, state) => ReviewScreen(
+          needId: state.pathParameters['id']!,
+        ),
       ),
     ],
   );
