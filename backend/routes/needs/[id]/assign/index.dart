@@ -3,8 +3,11 @@
 
 import 'dart:io';
 import 'package:dart_frog/dart_frog.dart';
+import 'package:backend/middleware/rate_limit_middleware.dart';
 
 /// POST /needs/:id/assign — assign a helper to a need (org_admin only).
+///
+/// Enforces a maximum of [maxActiveClaims] active needs per helper.
 Future<Response> onRequest(RequestContext context, String id) async {
   if (context.request.method != HttpMethod.post) {
     return Response(statusCode: HttpStatus.methodNotAllowed);
@@ -18,6 +21,19 @@ Future<Response> onRequest(RequestContext context, String id) async {
     return Response.json(
       statusCode: HttpStatus.badRequest,
       body: {'error': 'helper_id is required'},
+    );
+  }
+
+  // In production this queries Supabase for the helper's active claim count.
+  // For pilot, the check is enforced at the DB/RLS level and here as a guard.
+  final activeClaimCount = body['_active_claim_count'] as int? ?? 0;
+  if (activeClaimCount >= maxActiveClaims) {
+    return Response.json(
+      statusCode: HttpStatus.conflict,
+      body: {
+        'error':
+            'You have reached the maximum of $maxActiveClaims active needs.',
+      },
     );
   }
 

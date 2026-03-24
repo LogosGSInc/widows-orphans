@@ -1,11 +1,8 @@
 // Copyright (c) 2024 LOGOS Governance Systems, Inc. All rights reserved.
 // Proprietary and confidential.
 
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'app/app.dart';
+import 'package:dart_frog/dart_frog.dart';
+import 'package:sentry/sentry.dart';
 
 /// PII fields that must never be sent to Sentry.
 const _piiKeys = {
@@ -19,7 +16,7 @@ const _piiKeys = {
 };
 
 /// Strips PII from Sentry events before transmission.
-SentryEvent? _beforeSend(SentryEvent event, Hint hint) {
+SentryEvent? beforeSend(SentryEvent event, Hint hint) {
   var data = event.extra;
   if (data != null) {
     data = Map<String, dynamic>.from(data)
@@ -42,27 +39,16 @@ SentryEvent? _beforeSend(SentryEvent event, Hint hint) {
   return event;
 }
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
-  );
-
-  const sentryDsn = String.fromEnvironment('SENTRY_DSN');
-
-  await SentryFlutter.init(
-    (options) {
-      options.dsn = sentryDsn;
-      options.tracesSampleRate = 1.0;
-      options.beforeSend = _beforeSend;
-      options.sendDefaultPii = false;
-    },
-    appRunner: () => runApp(
-      const ProviderScope(
-        child: WidowsOrphansApp(),
-      ),
-    ),
-  );
+/// Middleware that captures unhandled exceptions and sends them to Sentry.
+Middleware sentryMiddleware() {
+  return (handler) {
+    return (context) async {
+      try {
+        return await handler(context);
+      } catch (exception, stackTrace) {
+        await Sentry.captureException(exception, stackTrace: stackTrace);
+        rethrow;
+      }
+    };
+  };
 }

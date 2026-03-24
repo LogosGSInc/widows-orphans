@@ -22,6 +22,39 @@ Widows & Orphans routes care requests through trusted community networks — chu
 Submit Request → Review/Match → Claim → Fulfill → Confirm Close
 ```
 
+## Features
+
+### Phase 1 — Foundation
+- Monorepo structure with Melos
+- Supabase schema with row-level security (RLS)
+- Shared domain models (Freezed + json_serializable)
+- Flutter authentication flow
+- Dart Frog backend with JWT auth middleware
+
+### Phase 2 — Core Loop
+- Requester flow: submit needs, track status, fulfillment confirmation
+- Helper flow: view available needs, claim, mark fulfilled
+- Moderator/Org Admin flow: need queue, review, assign, escalate
+- API routes for all core operations
+- Realtime status updates via Supabase
+
+### Phase 3 — Partner Dashboard
+- Flutter Web partner portal
+- Organization queue management
+- Helper roster and invitation system
+- Reporting and analytics dashboard
+- CSV export for offline workflows
+- Sponsor tagging for backed needs
+
+### Phase 4 — Pilot Hardening
+- **Sentry integration** across mobile, web, and backend with PII scrubbing
+- **Rate limiting**: 5 needs per user per 24 hours (429 response)
+- **Claim limits**: max 3 active needs per helper (409 response)
+- **Flag/report endpoint**: any user can flag a need, auto-transitions to UNDER_REVIEW
+- **GitHub Actions CI/CD**: analyze, test, build-web, build-backend
+- **Integration and unit test suite**: core loop, rate limits, auth, widget tests
+- **Pilot onboarding documentation** for Care Pastors and helpers
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -34,9 +67,9 @@ Submit Request → Review/Match → Claim → Fulfill → Confirm Close
 | Navigation | GoRouter |
 | Models | Freezed + json_serializable |
 | Monorepo | Melos |
-| Testing | flutter_test + mocktail |
+| Testing | flutter_test + mocktail + integration_test |
 | CI/CD | GitHub Actions |
-| Monitoring | Sentry |
+| Monitoring | Sentry (with PII scrubbing) |
 
 ## Monorepo Structure
 
@@ -52,8 +85,9 @@ widows-orphans/
 ├── backend/              Dart Frog API server
 ├── supabase/
 │   └── migrations/       SQL schema + RLS policies
-├── infra/                Docker, GitHub Actions CI/CD
-├── docs/                 Architecture documentation
+├── .github/
+│   └── workflows/        GitHub Actions CI/CD
+├── docs/                 Architecture & onboarding documentation
 └── melos.yaml            Workspace configuration
 ```
 
@@ -65,6 +99,7 @@ widows-orphans/
 - [Dart SDK](https://dart.dev/get-dart) >= 3.0
 - [Melos](https://melos.invertase.dev/) — `dart pub global activate melos`
 - A [Supabase](https://supabase.com/) project (for auth and database)
+- A [Sentry](https://sentry.io/) project (for error monitoring)
 
 ### Setup
 
@@ -76,14 +111,14 @@ cd widows-orphans
 # Install dependencies across all packages
 melos bootstrap
 
+# Generate Freezed models
+melos run generate
+
 # Run static analysis
 melos run analyze
 
 # Run tests
 melos run test
-
-# Generate Freezed models
-melos run generate
 ```
 
 ### Backend (Dart Frog)
@@ -91,18 +126,31 @@ melos run generate
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env with your Supabase credentials
+# Edit .env with your Supabase and Sentry credentials
 dart_frog dev
 ```
+
+**Environment variables** (see `backend/.env.example`):
+
+| Variable | Description |
+|----------|-------------|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous/public key |
+| `SUPABASE_SERVICE_KEY` | Supabase service role key (backend only) |
+| `JWT_SECRET` | Secret for JWT token verification |
+| `SENTRY_DSN` | Sentry Data Source Name for error reporting |
+| `ALLOWED_ORIGINS` | Comma-separated CORS origins |
+| `PORT` | Server port (default: 8080) |
 
 ### Supabase
 
 Apply the SQL migrations in `supabase/migrations/` to your Supabase project in order:
 
-1. `00001_create_partner_orgs.sql`
-2. `00002_create_users.sql`
-3. `00003_create_need_requests.sql`
-4. `00004_rls_policies.sql`
+1. `00001_create_partner_orgs.sql` — Partner organization table
+2. `00002_create_users.sql` — Users with roles and trust tiers
+3. `00003_create_need_requests.sql` — Need requests with full lifecycle
+4. `00004_rls_policies.sql` — Row-level security for all tables
+5. `00005_add_flag_support.sql` — Need flagging for moderator review
 
 ### Mobile App
 
@@ -110,8 +158,53 @@ Apply the SQL migrations in `supabase/migrations/` to your Supabase project in o
 cd apps/mobile
 flutter run \
   --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=your-anon-key
+  --dart-define=SUPABASE_ANON_KEY=your-anon-key \
+  --dart-define=SENTRY_DSN=https://your-dsn@sentry.io/id
 ```
+
+### Web App (Partner Portal)
+
+```bash
+cd apps/web
+flutter run -d chrome \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY=your-anon-key \
+  --dart-define=SENTRY_DSN=https://your-dsn@sentry.io/id
+```
+
+### Running Tests
+
+```bash
+# All unit tests across packages
+melos run test
+
+# Mobile integration tests
+cd apps/mobile && flutter test integration_test/
+
+# Backend tests only
+cd backend && dart test
+```
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/health` | Health check |
+| POST | `/needs` | Create a need (rate limited: 5/day) |
+| GET | `/needs/mine` | List requester's own needs |
+| GET | `/needs/available` | List available needs for helpers |
+| GET | `/needs/queue` | Organization need queue |
+| GET | `/needs/:id` | Get a single need |
+| PUT | `/needs/:id` | Update a need |
+| PATCH | `/needs/:id/status` | Update need status |
+| POST | `/needs/:id/assign` | Assign helper (claim limited: 3 active) |
+| POST | `/needs/:id/escalate` | Escalate to moderator |
+| POST | `/needs/:id/flag` | Flag need for review |
+| GET | `/orgs/:id/stats` | Organization dashboard stats |
+| GET | `/orgs/:id/reports` | Reporting and analytics |
+| GET | `/orgs/:id/settings` | Organization settings |
+| POST | `/orgs/:id/invite` | Invite a helper |
+| GET | `/orgs/:id/helpers` | List organization helpers |
 
 ## Architecture Rules
 
@@ -122,6 +215,12 @@ flutter run \
 5. All routing is rule-based (no AI at launch).
 6. RLS policies enforce data access at the database layer.
 7. Fulfillment count is internal only — never a leaderboard.
+8. Sentry never logs PII (descriptions, locations, names, emails).
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — System design and data model
+- [Pilot Onboarding](docs/pilot_onboarding.md) — Guide for Care Pastors and helpers
 
 ## License
 

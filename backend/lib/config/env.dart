@@ -21,4 +21,7 @@ class Env {
           .split(',')
           .map((e) => e.trim())
           .toList();
+
+  static String get sentryDsn =>
+      Platform.environment['SENTRY_DSN'] ?? '';
 }

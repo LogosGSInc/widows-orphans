@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:domain/domain.dart';
 import '../auth/auth_provider.dart';
 import '../auth/sign_in_screen.dart';
@@ -22,6 +23,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: '/signin',
+    observers: [SentryNavigatorObserver()],
     redirect: (context, state) {
       final isAuthenticated = authState.whenOrNull(
             data: (auth) => auth.session != null,
