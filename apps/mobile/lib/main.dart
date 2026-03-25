@@ -1,6 +1,8 @@
 // Copyright (c) 2024 LOGOS Governance Systems, Inc. All rights reserved.
 // Proprietary and confidential.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -19,7 +21,7 @@ const _piiKeys = {
 };
 
 /// Strips PII from Sentry events before transmission.
-SentryEvent? _beforeSend(SentryEvent event, Hint hint) {
+FutureOr<SentryEvent?> _beforeSend(SentryEvent event, {Hint? hint}) {
   var data = event.extra;
   if (data != null) {
     data = Map<String, dynamic>.from(data)
