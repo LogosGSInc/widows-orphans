@@ -1,229 +1,104 @@
 # Widows & Orphans
 
-**Dignified care coordination for the most vulnerable.**
-
-> *The app should have nothing to show you when your work is done.*
-
-A closed-loop community care platform that connects people in need with local helpers, churches, and ministries — without turning suffering into engagement metrics. No feed. No social primitives. No vanity metrics. Just a task-state driven tool for getting help to those who need it.
-
-**Copyright (c) 2024 LOGOS Governance Systems, Inc. All rights reserved.**
-
----
-
-## Mission
-
-The person asking for help will never pay. The platform monetizes infrastructure, not suffering.
-
-Widows & Orphans routes care requests through trusted community networks — churches, ministries, nonprofits — using rule-based matching, role-based access, and row-level security to protect the dignity and privacy of every person who asks for help.
-
-## Core Loop
-
-```
-Submit Request → Review/Match → Claim → Fulfill → Confirm Close
-```
-
-## Features
-
-### Phase 1 — Foundation
-- Monorepo structure with Melos
-- Supabase schema with row-level security (RLS)
-- Shared domain models (Freezed + json_serializable)
-- Flutter authentication flow
-- Dart Frog backend with JWT auth middleware
-
-### Phase 2 — Core Loop
-- Requester flow: submit needs, track status, fulfillment confirmation
-- Helper flow: view available needs, claim, mark fulfilled
-- Moderator/Org Admin flow: need queue, review, assign, escalate
-- API routes for all core operations
-- Realtime status updates via Supabase
-
-### Phase 3 — Partner Dashboard
-- Flutter Web partner portal
-- Organization queue management
-- Helper roster and invitation system
-- Reporting and analytics dashboard
-- CSV export for offline workflows
-- Sponsor tagging for backed needs
-
-### Phase 4 — Pilot Hardening
-- **Sentry integration** across mobile, web, and backend with PII scrubbing
-- **Rate limiting**: 5 needs per user per 24 hours (429 response)
-- **Claim limits**: max 3 active needs per helper (409 response)
-- **Flag/report endpoint**: any user can flag a need, auto-transitions to UNDER_REVIEW
-- **GitHub Actions CI/CD**: analyze, test, build-web, build-backend
-- **Integration and unit test suite**: core loop, rate limits, auth, widget tests
-- **Pilot onboarding documentation** for Care Pastors and helpers
+A community care platform connecting those in need with those who can help. Anonymous, ephemeral, and privacy-first.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Mobile Client | Flutter 3.x (Dart) — iOS & Android |
-| Web Client | Flutter Web — Partner org dashboards |
-| Backend API | Dart Frog |
-| Database & Auth | Supabase (PostgreSQL, JWT, RLS, Realtime) |
-| State Management | Riverpod 2.x |
-| Navigation | GoRouter |
-| Models | Freezed + json_serializable |
-| Monorepo | Melos |
-| Testing | flutter_test + mocktail + integration_test |
-| CI/CD | GitHub Actions |
-| Monitoring | Sentry (with PII scrubbing) |
+- **Frontend**: React 18 + TypeScript + Vite + TailwindCSS
+- **Backend**: PocketBase (self-hosted)
+- **Maps**: Leaflet.js + OpenStreetMap
+- **Deployment**: Vercel (static SPA)
+- **PWA**: Installable with offline support
 
-## Monorepo Structure
+## Features
 
-```
-widows-orphans/
-├── apps/
-│   ├── mobile/           Flutter mobile app (iOS + Android)
-│   └── web/              Flutter web app (partner dashboards)
-├── packages/
-│   ├── domain/           Shared domain models, enums, value objects
-│   ├── api_client/       Generated Dart API client
-│   └── ui_kit/           Shared Flutter widget library
-├── backend/              Dart Frog API server
-├── supabase/
-│   └── migrations/       SQL schema + RLS policies
-├── .github/
-│   └── workflows/        GitHub Actions CI/CD
-├── docs/                 Architecture & onboarding documentation
-└── melos.yaml            Workspace configuration
-```
+- Anonymous alias system (no login, no email, no phone)
+- Post needs within your community (auto-expire after 24 hours)
+- Fulfill needs through ephemeral chat (auto-expire after 1 hour)
+- Interactive map showing nearby needs within 10-mile radius
+- Category-based need classification (Food, Shelter, Transportation, Clothing, Medical, Other)
+- Stripe donate button (external link)
 
-## Getting Started
+## Local Development
 
 ### Prerequisites
 
-- [Flutter SDK](https://docs.flutter.dev/get-started/install) >= 3.10
-- [Dart SDK](https://dart.dev/get-dart) >= 3.0
-- [Melos](https://melos.invertase.dev/) — `dart pub global activate melos`
-- A [Supabase](https://supabase.com/) project (for auth and database)
-- A [Sentry](https://sentry.io/) project (for error monitoring)
+- Node.js 18+
+- [PocketBase](https://pocketbase.io/docs/) binary
 
 ### Setup
 
-```bash
-# Clone the repository
-git clone https://github.com/logos-gs/widows-orphans.git
-cd widows-orphans
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/LogosGSInc/widows-orphans.git
+   cd widows-orphans
+   ```
 
-# Install dependencies across all packages
-melos bootstrap
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-# Generate Freezed models
-melos run generate
+3. Copy environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-# Run static analysis
-melos run analyze
+4. Start PocketBase:
+   ```bash
+   ./pocketbase serve
+   ```
+   Then import the schema from `pocketbase/pb_schema.json` via the PocketBase admin UI (Settings > Import collections).
 
-# Run tests
-melos run test
-```
+5. Start the dev server:
+   ```bash
+   npm run dev
+   ```
 
-### Backend (Dart Frog)
+6. Open http://localhost:5173 in your browser.
 
-```bash
-cd backend
-cp .env.example .env
-# Edit .env with your Supabase and Sentry credentials
-dart_frog dev
-```
+## PocketBase Setup
 
-**Environment variables** (see `backend/.env.example`):
+PocketBase runs as a separate binary on the server. It is not included in this repository.
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Your Supabase project URL |
-| `SUPABASE_ANON_KEY` | Supabase anonymous/public key |
-| `SUPABASE_SERVICE_KEY` | Supabase service role key (backend only) |
-| `JWT_SECRET` | Secret for JWT token verification |
-| `SENTRY_DSN` | Sentry Data Source Name for error reporting |
-| `ALLOWED_ORIGINS` | Comma-separated CORS origins |
-| `PORT` | Server port (default: 8080) |
+1. Download PocketBase from https://pocketbase.io/docs/
+2. Start it: `./pocketbase serve`
+3. Open the admin UI at http://localhost:8090/_/
+4. Import the collection schema from `pocketbase/pb_schema.json`
+5. Optionally set up a cron job to clean up expired records
 
-### Supabase
+### Collections
 
-Apply the SQL migrations in `supabase/migrations/` to your Supabase project in order:
+| Collection | Purpose |
+|-----------|---------|
+| `aliases` | Anonymous user identities |
+| `needs` | Posted community needs (24h TTL) |
+| `chats` | Ephemeral chat sessions (1h TTL) |
+| `messages` | Chat messages (expire with chat) |
 
-1. `00001_create_partner_orgs.sql` — Partner organization table
-2. `00002_create_users.sql` — Users with roles and trust tiers
-3. `00003_create_need_requests.sql` — Need requests with full lifecycle
-4. `00004_rls_policies.sql` — Row-level security for all tables
-5. `00005_add_flag_support.sql` — Need flagging for moderator review
+## Vercel Deployment
 
-### Mobile App
+1. Connect the repository to Vercel
+2. Set environment variables:
+   - `VITE_PB_URL` — URL of your PocketBase instance
+   - `VITE_STRIPE_DONATE_URL` — Stripe Payment Link URL
+3. Deploy — the `vercel.json` handles SPA routing automatically
 
-```bash
-cd apps/mobile
-flutter run \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=your-anon-key \
-  --dart-define=SENTRY_DSN=https://your-dsn@sentry.io/id
-```
+## Environment Variables
 
-### Web App (Partner Portal)
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_PB_URL` | PocketBase server URL | `http://localhost:8090` |
+| `VITE_STRIPE_DONATE_URL` | Stripe donate link | `https://donate.stripe.com/PLACEHOLDER` |
 
-```bash
-cd apps/web
-flutter run -d chrome \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=your-anon-key \
-  --dart-define=SENTRY_DSN=https://your-dsn@sentry.io/id
-```
+## Design
 
-### Running Tests
-
-```bash
-# All unit tests across packages
-melos run test
-
-# Mobile integration tests
-cd apps/mobile && flutter test integration_test/
-
-# Backend tests only
-cd backend && dart test
-```
-
-## API Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check |
-| POST | `/needs` | Create a need (rate limited: 5/day) |
-| GET | `/needs/mine` | List requester's own needs |
-| GET | `/needs/available` | List available needs for helpers |
-| GET | `/needs/queue` | Organization need queue |
-| GET | `/needs/:id` | Get a single need |
-| PUT | `/needs/:id` | Update a need |
-| PATCH | `/needs/:id/status` | Update need status |
-| POST | `/needs/:id/assign` | Assign helper (claim limited: 3 active) |
-| POST | `/needs/:id/escalate` | Escalate to moderator |
-| POST | `/needs/:id/flag` | Flag need for review |
-| GET | `/orgs/:id/stats` | Organization dashboard stats |
-| GET | `/orgs/:id/reports` | Reporting and analytics |
-| GET | `/orgs/:id/settings` | Organization settings |
-| POST | `/orgs/:id/invite` | Invite a helper |
-| GET | `/orgs/:id/helpers` | List organization helpers |
-
-## Architecture Rules
-
-1. No public identity layer. No profiles visible to others.
-2. Requesters see only their own need status.
-3. Helpers see only matched/assigned needs — never a browse-all feed.
-4. Sponsor admins see only aggregate stats — never individual requester identity.
-5. All routing is rule-based (no AI at launch).
-6. RLS policies enforce data access at the database layer.
-7. Fulfillment count is internal only — never a leaderboard.
-8. Sentry never logs PII (descriptions, locations, names, emails).
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md) — System design and data model
-- [Pilot Onboarding](docs/pilot_onboarding.md) — Guide for Care Pastors and helpers
+- **Navy**: `#0A1628` (primary)
+- **White**: `#FFFFFF` (text, cards)
+- **Chrome**: `#C0C7D4` (borders, secondary)
+- Mobile-first, clean monochrome aesthetic
+- System font stack
 
 ## License
 
-**Proprietary** — LOGOS Governance Systems, Inc. All rights reserved.
-
-Unauthorized copying, distribution, or use of this software is strictly prohibited.
+Private — LOGOS Global Services Inc.
