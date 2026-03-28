@@ -1,0 +1,224 @@
+[
+  {
+    "name": "aliases",
+    "type": "base",
+    "schema": [
+      {
+        "name": "alias",
+        "type": "text",
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 100
+        }
+      },
+      {
+        "name": "device_hash",
+        "type": "text",
+        "required": true,
+        "options": {
+          "min": 64,
+          "max": 64
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_alias_unique ON aliases (alias)",
+      "CREATE INDEX idx_device_hash ON aliases (device_hash)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null
+  },
+  {
+    "name": "needs",
+    "type": "base",
+    "schema": [
+      {
+        "name": "alias_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "aliases",
+          "cascadeDelete": false,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "category",
+        "type": "select",
+        "required": true,
+        "options": {
+          "values": ["food", "shelter", "transportation", "clothing", "medical", "other"],
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "description",
+        "type": "text",
+        "required": true,
+        "options": {
+          "min": 10,
+          "max": 280
+        }
+      },
+      {
+        "name": "lat",
+        "type": "number",
+        "required": true,
+        "options": {
+          "min": -90,
+          "max": 90
+        }
+      },
+      {
+        "name": "lng",
+        "type": "number",
+        "required": true,
+        "options": {
+          "min": -180,
+          "max": 180
+        }
+      },
+      {
+        "name": "expires_at",
+        "type": "date",
+        "required": true
+      },
+      {
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "options": {
+          "values": ["open", "fulfilled", "expired"],
+          "maxSelect": 1
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_needs_status ON needs (status)",
+      "CREATE INDEX idx_needs_geo ON needs (lat, lng)",
+      "CREATE INDEX idx_needs_expires ON needs (expires_at)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": null
+  },
+  {
+    "name": "chats",
+    "type": "base",
+    "schema": [
+      {
+        "name": "need_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "needs",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "poster_alias_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "aliases",
+          "cascadeDelete": false,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "fulfiller_alias_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "aliases",
+          "cascadeDelete": false,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "started_at",
+        "type": "date",
+        "required": true
+      },
+      {
+        "name": "expires_at",
+        "type": "date",
+        "required": true
+      },
+      {
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "options": {
+          "values": ["active", "expired"],
+          "maxSelect": 1
+        }
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_chats_need ON chats (need_id)",
+      "CREATE INDEX idx_chats_status ON chats (status)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": null
+  },
+  {
+    "name": "messages",
+    "type": "base",
+    "schema": [
+      {
+        "name": "need_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "needs",
+          "cascadeDelete": true,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "sender_alias_id",
+        "type": "relation",
+        "required": true,
+        "options": {
+          "collectionId": "aliases",
+          "cascadeDelete": false,
+          "maxSelect": 1
+        }
+      },
+      {
+        "name": "body",
+        "type": "text",
+        "required": true,
+        "options": {
+          "min": 1,
+          "max": 500
+        }
+      },
+      {
+        "name": "expires_at",
+        "type": "date",
+        "required": true
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_messages_need ON messages (need_id)",
+      "CREATE INDEX idx_messages_expires ON messages (expires_at)"
+    ],
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": null,
+    "deleteRule": null
+  }
+]

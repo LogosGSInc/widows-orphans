@@ -1,6 +1,0 @@
-# Widows & Orphans — Supabase Configuration
-# Copyright (c) 2024 LOGOS Governance Systems, Inc.
-
-[project]
-id = "widows-orphans"
-name = "Widows & Orphans"
