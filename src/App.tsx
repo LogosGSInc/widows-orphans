@@ -5,7 +5,7 @@ import { MapView } from './screens/MapView';
 export default function App() {
   return (
     <GovernanceGate>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
           <Route path="*" element={<MapView />} />
         </Routes>
